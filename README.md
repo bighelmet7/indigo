@@ -1,2 +1,2 @@
 # indigo
-DBMS for influxdb
+Flask & influxdb
