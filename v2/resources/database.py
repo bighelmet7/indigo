@@ -85,7 +85,7 @@ class TagListResource(Resource):
         except InfluxDBClientError as e:
             return e.content, status.HTTP_500_INTERNAL_SERVER_ERROR
         result = {
-            'tagKey': [elem.get('tagKey', '') for elem in list(response.get_points())]
+            'tagKeys': [elem.get('tagKey', '') for elem in list(response.get_points())]
         }
         return result, status.HTTP_200_OK
 
