@@ -1,2 +1,2 @@
 # indigo
-Flask & influxdb
+Flask & influxdb (1.7)
