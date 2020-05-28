@@ -62,6 +62,6 @@ class QueryPagination(object):
             return e.content
         result = OrderedDict([
             ('pagination', pagination),
-            ('result', list(response.get_points())),
+            ('results', list(response.get_points())),
         ])
         return result
