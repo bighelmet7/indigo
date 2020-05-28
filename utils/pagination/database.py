@@ -43,7 +43,10 @@ class QueryPagination(object):
         else:
             response = list(response.get_points())
         if response:
-            result = response[0].get('total_value', -1)
+            resp_dict = response[0]
+            del resp_dict['time']
+            keys = list(resp_dict.keys()) # any field value
+            result = resp_dict.get(keys[0], -1)
         return result
 
     def to_dict(self):
