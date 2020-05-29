@@ -15,24 +15,33 @@ class QueryStringSerializer(object):
             raise TypeError('query must be a dictionary')
         self.db_name = db_name
         self.measurement = measurement
+        self.internal_query = self._get_internal(query)
         self.query = self.__normalize(query)
 
-    def __normalize(self, query):
+    def _get_internal(self, query):
         '''
-        normalize the query into a string object that accomplish the Influxdb
-        standards.
+        Formalize an internal query which will contain the select, from and where
+        clauses as a key of its dictionary.
         '''
         internal_query = {
             'select': ', '.join(query.get('show', [])),
             'from': '"{0}"."{1}"."{2}"'.format(self.db_name, "autogen", self.measurement),
             'where': ' and '.join(query.get('fields', []))
         }
+        return internal_query
+
+
+    def __normalize(self, query):
+        '''
+        normalize the query into a string object that accomplish the Influxdb
+        standards.
+        '''
         template = 'select {select} from {from}'
-        if internal_query.get('where', ''):
+        if self.internal_query.get('where', ''):
             template = 'select {select} from {from} where {where}'       
         else:
-            internal_query.pop('where')
-        result = template.format(**internal_query)
+            self.internal_query.pop('where')
+        result = template.format(**self.internal_query)
         return result 
 
     def __repr__(self):
