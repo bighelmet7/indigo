@@ -64,7 +64,7 @@ class MeasurementResource(Resource):
         pagination = QueryPagination(query=query, limit=limit, offset=offset)
         result = pagination.to_dict()
         if _format.lower() in self.formats:
-            result = self.formats[_format.lower()].render(result.get('result', []))
+            result = self.formats[_format.lower()].render(result.get('results', []))
             filename = 'results.%s.csv' % (datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
             return send_file(result, mimetype='text/csv',as_attachment=True,attachment_filename=filename)
         return result, status.HTTP_200_OK
