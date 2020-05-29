@@ -13,6 +13,8 @@ class QueryPagination(object):
     Query pagination
     '''
 
+    MAX_CHUNK = 10000
+
     def __init__(self, query=QueryStringSerializer(), limit=0, offset=0):
         '''
         @query QueryStringSerializer: normalize query to influxdb
@@ -25,19 +27,35 @@ class QueryPagination(object):
         self.raw_query = str(self.query)
         self.count = self._count_total_points()
 
+    def get_a_field(self, _from):
+        '''
+        Look for a field with a float as type, if there are not catch the first string key.
+        '''
+        _db, _, measurement = _from.split('.')
+        result = ''
+        try:
+            response = db.query('SHOW FIELD KEYS ON {0} FROM {1}'.format(_db, measurement))
+        except InfluxDBClientError:
+            result = '*'  # worst case
+        else:
+            points = list(response.get_points())
+            for point in points:
+                if point.get('fieldType') == 'float':
+                    return point.get('fieldKey')
+                result = point.get('fieldKey')
+        return result
+
     def _count_total_points(self):
         '''
         Return the total of points of the query select count(*) from db;
         '''
-        _from = re.search("(?<=from)(.*)(?=.*)", self.raw_query)
-        if _from:
-            path = _from.groups()[0]
-            path = path.strip()
-        q = 'select count(*) as total from {0}'.format(path)
+        _from = self.query.internal_query.get('from', '')
+        field = self.get_a_field(_from)
+        q = 'select count({0}) as total from {1}'.format(field, _from)
         result = 0
         response = list()
         try:
-            response = db.query(q)
+            response = db.query(q, chunked=True, chunk_size=self.MAX_CHUNK)
         except InfluxDBClientError:
             result = -1
         else:
@@ -57,7 +75,7 @@ class QueryPagination(object):
         ])
         try:
             query = self.raw_query + ' limit {0} offset {1}'.format(self.limit, self.offset)
-            response = db.query(query)
+            response = db.query(query, chunked=True, chunk_size=self.MAX_CHUNK)
         except InfluxDBClientError as e:
             return e.content
         result = OrderedDict([
